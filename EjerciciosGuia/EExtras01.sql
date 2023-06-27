@@ -110,6 +110,18 @@ LIMIT 1;
 /* 15. Mostrar quien gana en cada partido (codigo, equipo_local, equipo_visitante,
 equipo_ganador), en caso de empate sera null. */
 
+SELECT
+    p.codigo,
+    p.equipo_local,
+    p.equipo_visitante,
+    CASE
+        WHEN p.puntos_local > p.puntos_visitante THEN p.equipo_local
+        WHEN p.puntos_local < p.puntos_visitante THEN p.equipo_visitante
+        ELSE NULL
+    END AS equipo_ganador
+FROM
+    partidos p;
+
 
 
 
