@@ -107,6 +107,10 @@ SELECT DISTINCT id_depto, nombre, cargo_emp
 FROM personal.empleados
 WHERE cargo_emp in ('vendedor', 'investigador', 'mecánico');
 
+SELECT nombre_depto
+FROM departamentos
+WHERE nombre_depto IN ('Ventas', 'Investigación', 'Mantenimiento');
+
 /* 20. Ahora obtener el contrario, los nombres de los departamentos que no sean “Ventas” ni
 “Investigación” ni ‘Mantenimiento. */
 
@@ -115,15 +119,55 @@ SELECT DISTINCT id_depto, nombre , cargo_emp
 FROM personal.empleados
 WHERE cargo_emp NOT IN ('vendedor', 'investigador', 'mecánico');
 
+SELECT nombre_depto
+FROM departamentos
+WHERE nombre_depto NOT IN ('Ventas', 'Investigación', 'Mantenimiento');
 
+-- 21. Mostrar el salario más alto de la empresa. --
+SELECT MAX(sal_emp) AS salario_mas_alto;
 
+/* 22. Mostrar el nombre del último empleado de la lista por orden alfabético. */
+SELECT nombre
+FROM personal.empleados
+ORDER BY nombre DESC
+LIMIT 1;
 
+/* 23. Hallar el salario más alto, el más bajo y la diferencia entre ellos. */
+SELECT MAX(sal_emp) AS salario_mas_alto, MIN(sal_emp) AS salario_mas_bajo, MAX(sal_emp) - MIN(sal_emp) AS diferencia_salarios
+FROM personal.empleados;
 
+/* 24. Hallar el salario promedio por departamento. */
+SELECT id_depto, AVG(sal_emp) AS salario_promedio
+FROM personal.empleados
+GROUP BY id_depto;
 
+SELECT d.id_depto, d.nombre_depto, ROUND(AVG(e.sal_emp), 2) AS avg_sal
+FROM empleados e
+INNER JOIN departamentos d ON e.id_depto = d.id_depto
+GROUP BY d.id_depto, d.nombre_depto;
 
+/* 25. Hallar los departamentos que tienen más de tres empleados. Mostrar el número de
+empleados de esos departamentos. */
 
+SELECT d.nombre_depto, COUNT(e.id_emp) AS numero_empleados
+FROM departamentos d
+JOIN empleados e ON d.id_depto = e.id_depto
+GROUP BY d.nombre_depto
+HAVING COUNT(e.id_emp) > 3;
 
+/* 26. Hallar los departamentos que no tienen empleados */
 
+SELECT d.nombre_depto
+FROM departamentos d
+LEFT JOIN empleados e ON d.id_depto = e.id_depto
+WHERE e.id_emp IS NULL;
 
+/* 28. Mostrar la lista de los empleados cuyo salario es mayor o igual que el promedio de la
+empresa. Ordenarlo por departamento. */
 
+SELECT e.id_emp, e.nombre, e.sal_emp, e.id_depto, d.nombre_depto
+FROM empleados e
+JOIN departamentos d ON e.id_depto = d.id_depto
+WHERE e.sal_emp >= (SELECT AVG(sal_emp) FROM empleados)
+ORDER BY e.id_depto;
 
