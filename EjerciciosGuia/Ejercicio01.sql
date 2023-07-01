@@ -157,6 +157,10 @@ HAVING COUNT(e.id_emp) > 3;
 
 /* 26. Hallar los departamentos que no tienen empleados */
 
+SELECT `id_depto`, `nombre_depto` FROM `personal`.`departamentos`;
+SELECT `id_emp`, `id_depto`, `nombre` FROM `personal`.`empleados`;
+
+
 SELECT d.nombre_depto
 FROM departamentos d
 LEFT JOIN empleados e ON d.id_depto = e.id_depto

@@ -122,6 +122,11 @@ SELECT
 FROM
     partidos p;
 
-
+SELECT partidos.codigo, partidos.equipo_local, partidos.equipo_visitante, equipos.Nombre as 'Equipo ganador'
+FROM partidos
+JOIN equipos ON partidos.equipo_local or partidos.equipo_visitante = equipos.Nombre
+WHERE equipos.Nombre
+ in ((SELECT equipo_local FROM equipos WHERE puntos_local> puntos_visitante limit 1), (SELECT equipo_visitante FROM equipos WHERE puntos_local< puntos_visitante limit 1))
+LIMIT 0, 1000;
 
 

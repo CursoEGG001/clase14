@@ -14,7 +14,7 @@ SELECT `nombre`, `apellido1`, `apellido2`, `email` FROM `jardineria`.`empleado` 
 
 /* 4. Devuelve el nombre del puesto, nombre, apellidos y email del jefe de la empresa. */
 
-SELECT `puesto`, `nombre`, `apellido1`, `apellido2`,`empleado`.`email` FROM `jardineria`.`empleado`;
+SELECT `puesto`, `nombre`, `apellido1`, `apellido2`,`empleado`.`email` FROM `jardineria`.`empleado` WHERE puesto='Director General';
 
 /* 5. Devuelve un listado con el nombre, apellidos y puesto de aquellos empleados que no sean
 representantes de ventas. */
@@ -310,4 +310,343 @@ SELECT ROUND(AVG(total)) AS pago_medio_2009
 FROM pago
 WHERE YEAR(fecha_pago) = 2009;
 
+/* 4. ¿Cuántos pedidos hay en cada estado? Ordena el resultado de forma descendente por el
+número de pedidos. */
+
+SELECT estado, COUNT(codigo_pedido) AS numero_pedidos
+FROM pedido
+GROUP BY estado
+ORDER BY numero_pedidos DESC;
+
+/* 5. Calcula el precio de venta del producto más caro y más barato en una misma consulta. */
+
+SELECT nombre, MAX(precio_venta) AS precio_mas_caro, MIN(precio_venta) AS precio_mas_barato
+FROM producto
+GROUP BY nombre
+HAVING COUNT(*) > 1;
+
+/* 6. Calcula el número de clientes que tiene la empresa. */
+
+SELECT count(codigo_cliente) AS total_clientes FROM jardineria.cliente;
+
+/* 7. ¿Cuántos clientes tiene la ciudad de Madrid? */
+
+SELECT COUNT(*) AS total_clientes, nombre_cliente
+FROM cliente
+WHERE ciudad = 'Madrid' GROUP BY nombre_cliente ;
+
+/* 8. ¿Calcula cuántos clientes tiene cada una de las ciudades que empiezan por M? */
+
+SELECT ciudad, COUNT(*) AS total_clientes
+FROM cliente
+WHERE ciudad LIKE 'M%'
+GROUP BY ciudad;
+
+/* 9. Devuelve el nombre de los representantes de ventas y el número de clientes al que atiende
+cada uno. */
+
+SELECT empleado.codigo_empleado, empleado.nombre, empleado.apellido1, empleado.apellido2, COUNT(cliente.codigo_cliente) AS cantidad_clientes
+FROM empleado
+LEFT JOIN cliente ON empleado.codigo_empleado = cliente.codigo_empleado_rep_ventas
+GROUP BY empleado.codigo_empleado, empleado.nombre, empleado.apellido1, empleado.apellido2;
+
+/* 10. Calcula el número de clientes que no tiene asignado representante de ventas. */
+
+SELECT `codigo_empleado_rep_ventas`, `codigo_cliente` FROM `jardineria`.`cliente`;
+
+
+SELECT COUNT(cliente.codigo_cliente) AS cantidad_clientes_sin_representante
+FROM cliente
+LEFT JOIN empleado ON cliente.codigo_empleado_rep_ventas = empleado.codigo_empleado
+WHERE cliente.codigo_empleado_rep_ventas IS NULL;
+
+/* 11. Calcula la fecha del primer y último pago realizado por cada uno de los clientes. El listado
+deberá mostrar el nombre y los apellidos de cada cliente. */
+
+SELECT cliente.nombre_cliente, cliente.nombre_contacto, cliente.apellido_contacto, 
+       MIN(pago.fecha_pago) AS primera_fecha_pago, MAX(pago.fecha_pago) AS ultima_fecha_pago
+FROM cliente
+INNER JOIN pago ON cliente.codigo_cliente = pago.codigo_cliente
+GROUP BY cliente.nombre_cliente, cliente.nombre_contacto, cliente.apellido_contacto
+HAVING primera_fecha_pago IS NOT NULL AND ultima_fecha_pago IS NOT NULL;
+
+/* 12. Calcula el número de productos diferentes que hay en cada uno de los pedidos. */
+
+SELECT pedido.codigo_pedido, fecha_pedido,COUNT(DISTINCT producto.codigo_producto) AS num_productos_diferentes
+FROM pedido
+INNER JOIN detalle_pedido ON pedido.codigo_pedido = detalle_pedido.codigo_pedido
+INNER JOIN producto ON detalle_pedido.codigo_producto = producto.codigo_producto
+GROUP BY pedido.codigo_pedido;
+
+/* 13. Calcula la suma de la cantidad total de todos los productos que aparecen en cada uno de
+los pedidos. */
+SELECT `detalle_pedido`.`codigo_pedido`,
+    `detalle_pedido`.`codigo_producto`,
+    `detalle_pedido`.`cantidad`,
+    `detalle_pedido`.`precio_unidad`,
+    `detalle_pedido`.`numero_linea`
+FROM `jardineria`.`detalle_pedido`;
+
+SELECT `pedido`.`codigo_pedido`,
+    `pedido`.`fecha_pedido`,
+    `pedido`.`fecha_esperada`,
+    `pedido`.`fecha_entrega`,
+    `pedido`.`estado`,
+    `pedido`.`comentarios`,
+    `pedido`.`codigo_cliente`
+FROM `jardineria`.`pedido`;
+
+SELECT detalle_pedido.codigo_pedido, SUM(detalle_pedido.cantidad) AS cantidad_total
+FROM detalle_pedido
+INNER JOIN pedido ON detalle_pedido.codigo_pedido = pedido.codigo_pedido
+GROUP BY detalle_pedido.codigo_pedido;
+
+/* 14. Devuelve un listado de los 20 productos más vendidos y el número total de unidades que
+se han vendido de cada uno. El listado deberá estar ordenado por el número total de
+unidades vendidas. */
+
+SELECT producto.codigo_producto, producto.nombre, SUM(detalle_pedido.cantidad) AS total_unidades_vendidas
+FROM detalle_pedido
+INNER JOIN producto ON detalle_pedido.codigo_producto = producto.codigo_producto
+GROUP BY producto.codigo_producto, producto.nombre
+ORDER BY total_unidades_vendidas DESC
+LIMIT 20;
+
+/* 15. La facturación que ha tenido la empresa en toda la historia, indicando la base imponible, el
+IVA y el total facturado. La base imponible se calcula sumando el coste del producto por el
+número de unidades vendidas de la tabla detalle_pedido. El IVA es el 21 % de la base
+imponible, y el total la suma de los dos campos anteriores. */
+
+SELECT 
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) AS base_imponible,
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) * 0.21 AS iva,
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) + (SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) * 0.21) AS total_facturado
+FROM detalle_pedido
+INNER JOIN producto ON detalle_pedido.codigo_producto = producto.codigo_producto;
+
+SELECT
+  detalle_pedido.codigo_pedido,
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) AS base_imponible,
+  (SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) * 0.21) AS iva,
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) + (SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) * 0.21) AS total
+FROM detalle_pedido
+/* INNER JOIN pago ON detalle_pedido.codigo_pedido = pago.codigo_pedido */
+INNER JOIN producto ON detalle_pedido.codigo_producto = producto.codigo_producto
+GROUP BY detalle_pedido.codigo_pedido; 
+
+/* 16. La misma información que en la pregunta anterior, pero agrupada por código de producto. */
+
+SELECT
+  detalle_pedido.codigo_producto,
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) AS base_imponible,
+  (SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) * 0.21) AS iva,
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) + (SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) * 0.21) AS total
+FROM detalle_pedido
+INNER JOIN producto ON detalle_pedido.codigo_producto = producto.codigo_producto
+GROUP BY detalle_pedido.codigo_producto;
+
+/* 17. La misma información que en la pregunta anterior, pero agrupada por código de producto
+filtrada por los códigos que empiecen por OR. */
+
+SELECT
+  detalle_pedido.codigo_producto,
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) AS base_imponible,
+  (SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) * 0.21) AS iva,
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) + (SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) * 0.21) AS total
+FROM detalle_pedido
+INNER JOIN producto ON detalle_pedido.codigo_producto = producto.codigo_producto
+WHERE detalle_pedido.codigo_producto LIKE 'OR%'
+GROUP BY detalle_pedido.codigo_producto;
+
+/* 18. Lista las ventas totales de los productos que hayan facturado más de 3000 euros. Se
+mostrará el nombre, unidades vendidas, total facturado y total facturado con impuestos (21%
+IVA) */
+
+SELECT
+  producto.nombre,
+  SUM(detalle_pedido.cantidad) AS unidades_vendidas,
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) AS total_facturado,
+  SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad * 1.21) AS total_facturado_con_iva
+FROM pedido INNER JOIN detalle_pedido ON pedido.codigo_pedido = detalle_pedido.codigo_pedido INNER JOIN producto ON detalle_pedido.codigo_producto = producto.codigo_producto
+GROUP BY producto.nombre
+HAVING SUM(detalle_pedido.precio_unidad * detalle_pedido.cantidad) > 3000;
+
+/* Subconsultas con operadores básicos de comparación
+1. Devuelve el nombre del cliente con mayor límite de crédito. */
+
+SELECT MAX(`limite_credito`) FROM `jardineria`.`cliente`;
+
+/* 2. Devuelve el nombre del producto que tenga el precio de venta más caro. */
+
+SELECT `codigo_producto`, `precio_venta` FROM `jardineria`.`producto` ORDER BY precio_venta DESC LIMIT 1;
+
+/* 3. Devuelve el nombre del producto del que se han vendido más unidades. (Tenga en cuenta
+que tendrá que calcular cuál es el número total de unidades que se han vendido de cada
+producto a partir de los datos de la tabla detalle_pedido. Una vez que sepa cuál es el código
+del producto, puede obtener su nombre fácilmente.) */
+
+SELECT
+  producto.nombre AS nombre_producto
+FROM detalle_pedido
+INNER JOIN producto ON detalle_pedido.codigo_producto = producto.codigo_producto
+GROUP BY producto.codigo_producto, producto.nombre
+ORDER BY SUM(detalle_pedido.cantidad) DESC
+LIMIT 1;
+
+/* 4. Los clientes cuyo límite de crédito sea mayor que los pagos que haya realizado. (Sin utilizar
+INNER JOIN). */
+
+SELECT
+  cliente.codigo_cliente, nombre_cliente,
+  cliente.limite_credito
+FROM cliente
+LEFT JOIN pago ON cliente.codigo_cliente = pago.codigo_cliente
+GROUP BY cliente.codigo_cliente, cliente.limite_credito
+HAVING cliente.limite_credito > SUM(pago.total) OR SUM(pago.total) IS NULL;
+
+/* 5. Devuelve el producto que más unidades tiene en stock.*/
+
+SELECT `codigo_producto`, `cantidad_en_stock` 
+FROM `jardineria`.`producto` where cantidad_en_stock= (
+select MAX(`cantidad_en_stock`) FROM `jardineria`.`producto`
+);
+
+/* 6. Devuelve el producto que menos unidades tiene en stock. */
+
+SELECT `codigo_producto`, `cantidad_en_stock` 
+FROM `jardineria`.`producto` where cantidad_en_stock= (
+select MIN(`cantidad_en_stock`) FROM `jardineria`.`producto`
+);
+
+/* 7. Devuelve el nombre, los apellidos y el email de los empleados que están a cargo de Alberto
+Soria. */
+
+SELECT `codigo_empleado`, `nombre`, `apellido1`, `apellido2`, `extension`, `email`, `codigo_oficina`, `codigo_jefe`, `puesto` FROM `jardineria`.`empleado`
+WHERE codigo_jefe= ALL(
+SELECT codigo_jefe FROM empleado WHERE codigo_jefe=3
+);
+
+/* Subconsultas con ALL y ANY
+1. Devuelve el nombre del cliente con mayor límite de crédito. */
+
+SELECT `codigo_cliente`,
+ `nombre_cliente`,
+ `nombre_contacto`,
+ `apellido_contacto`,
+ `telefono`,
+ `fax`,
+ `linea_direccion1`,
+ `linea_direccion2`,
+ `ciudad`,
+ `region`,
+ `pais`,
+ `codigo_postal`,
+ `codigo_empleado_rep_ventas`,
+ `limite_credito`
+ FROM `jardineria`.`cliente` 
+ where limite_credito = any(
+ select MAX(`limite_credito`) 
+ from `jardineria`.`cliente`
+ );
+
+/* 2. Devuelve el nombre del producto que tenga el precio de venta más caro. */
+
+SELECT `codigo_producto`, `nombre`, `precio_venta` FROM `jardineria`.`producto` 
+WHERE precio_venta = ANY(
+SELECT MAX(precio_venta) FROM jardineria.producto
+);
+
+/* 3. Devuelve el producto que menos unidades tiene en stock. */
+SELECT `codigo_producto`, `nombre`, `precio_venta` FROM `jardineria`.`producto` 
+WHERE cantidad_en_stock = ANY(
+SELECT MIN(cantidad_en_stock) FROM jardineria.producto
+);
+
+/*1. Devuelve el nombre, apellido1 y cargo de los empleados que no representen a ningún
+cliente.*/
+
+SELECT codigo_empleado, apellido1, nombre
+FROM empleado
+WHERE codigo_empleado in (
+SELECT `codigo_empleado_rep_ventas` FROM `jardineria`.`cliente`
+);
+
+/* 2. Devuelve un listado que muestre solamente los clientes que no han realizado ningún pago. */
+
+SELECT `codigo_cliente`, `nombre_cliente` FROM `jardineria`.`cliente`
+where codigo_cliente not in (
+ SELECT `codigo_cliente` FROM `jardineria`.`pago`
+ );
+ 
+/* 3. Devuelve un listado que muestre solamente los clientes que sí han realizado ningún pago. */
+
+SELECT `codigo_cliente`, `nombre_cliente` FROM `jardineria`.`cliente`
+where codigo_cliente in (
+ SELECT `codigo_cliente` FROM `jardineria`.`pago`
+ );
+
+/* 4. Devuelve un listado de los productos que nunca han aparecido en un pedido. */
+
+SELECT `codigo_producto` FROM `jardineria`.`producto` where codigo_producto not in (
+SELECT `codigo_producto` FROM `jardineria`.`detalle_pedido`
+);
+
+/* 5. Devuelve el nombre, apellidos, puesto y teléfono de la oficina de aquellos empleados que
+no sean representante de ventas de ningún cliente. */
+
+SELECT `empleado`.`codigo_empleado`,
+    `empleado`.`nombre`,
+    `empleado`.`apellido1`,
+    `empleado`.`apellido2`,
+    `empleado`.`extension`,
+    `empleado`.`email`,
+    `empleado`.`codigo_oficina`,
+    `empleado`.`codigo_jefe`,
+    `empleado`.`puesto`
+FROM `jardineria`.`empleado`
+where codigo_empleado not in (
+SELECT `codigo_empleado_rep_ventas` FROM `jardineria`.`cliente`
+);
+
+/* Subconsultas con EXISTS y NOT EXISTS
+1. Devuelve un listado que muestre solamente los clientes que no han realizado ningún
+pago. */
+
+SELECT codigo_cliente,nombre_cliente,nombre_contacto ,apellido_contacto
+FROM cliente c
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM pedido p
+  WHERE p.codigo_cliente = c.codigo_cliente
+);
+
+/* 2. Devuelve un listado que muestre solamente los clientes que sí han realizado ningún pago. */
+
+SELECT codigo_cliente,nombre_cliente,nombre_contacto ,apellido_contacto
+FROM cliente c
+WHERE EXISTS (
+  SELECT 1
+  FROM pago p
+  WHERE p.codigo_cliente = c.codigo_cliente
+) ;
+
+/* 3. Devuelve un listado de los productos que nunca han aparecido en un pedido. */
+
+SELECT `codigo_producto`, `nombre`, `precio_venta`
+FROM producto p
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM detalle_pedido dp
+  WHERE dp.codigo_producto = p.codigo_producto
+) ;
+
+/* 4. Devuelve un listado de los productos que han aparecido en un pedido alguna vez. */
+
+SELECT codigo_producto, nombre, precio_venta
+FROM producto p
+WHERE EXISTS (
+  SELECT 1
+  FROM detalle_pedido dp
+  WHERE dp.codigo_producto = p.codigo_producto
+)
 
