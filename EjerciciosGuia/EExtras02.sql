@@ -650,3 +650,4 @@ WHERE EXISTS (
   WHERE dp.codigo_producto = p.codigo_producto
 )
 
+
