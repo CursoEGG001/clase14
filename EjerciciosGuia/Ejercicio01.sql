@@ -21,13 +21,13 @@ FROM `personal`.`departamentos`;
 SELECT `nombre_depto` FROM `personal`.`departamentos`;
 
 -- 4. Obtener el nombre y salario de todos los empleados. --
-SELECT `comision_emp`, `nombre`, `id_emp` FROM `personal`.`empleados`;
+SELECT `comision_emp`, `nombre`, `id_emp`,`sal_emp` FROM `personal`.`empleados`;
 
 -- 6. Obtener los datos de los empleados cuyo cargo sea ‘Secretaria’. --
-SELECT `id_emp`, `nombre`, `cargo_emp` FROM `personal`.`empleados` WHERE `empleados`.`cargo_emp` LIKE 'secretaria';
+SELECT `id_emp`, `nombre`, `sex_emp`, `fec_nac`, `fec_incorporacion`, `sal_emp`, `comision_emp`, `cargo_emp`, `id_depto` FROM `personal`.`empleados` WHERE `empleados`.`cargo_emp` LIKE 'secretaria';
 
 -- 7. Obtener los datos de los empleados vendedores, ordenados por nombre alfabéticamente. --
-SELECT `id_emp`, `nombre`, `cargo_emp` 
+SELECT `empleados`.`id_emp`, `empleados`.`nombre`, `empleados`.`sex_emp`, `empleados`.`fec_nac`, `empleados`.`fec_incorporacion`, `empleados`.`sal_emp`, `empleados`.`comision_emp`, `empleados`.`cargo_emp`, `empleados`.`id_depto`
 FROM `personal`.`empleados` 
 WHERE `empleados`.`cargo_emp` 
 LIKE 'vendedor' 
@@ -136,6 +136,37 @@ LIMIT 1;
 SELECT MAX(sal_emp) AS salario_mas_alto, MIN(sal_emp) AS salario_mas_bajo, MAX(sal_emp) - MIN(sal_emp) AS diferencia_salarios
 FROM personal.empleados;
 
+SELECT `empleados`.`id_emp`,
+    `empleados`.`nombre`,
+    `empleados`.`sex_emp`,
+    `empleados`.`fec_nac`,
+    `empleados`.`fec_incorporacion`,
+    `empleados`.`sal_emp`,
+    `empleados`.`comision_emp`,
+    `empleados`.`cargo_emp`,
+    `empleados`.`id_depto`
+FROM `personal`.`empleados`
+WHERE `sal_emp` = (SELECT MAX(`sal_emp`) from empleados)
+OR `sal_emp` =(select MIN(`sal_emp`)from empleados)
+OR `sal_emp` = (Select (MAX(`sal_emp`) - MIN(`sal_emp`)) from empleados);
+
+SELECT `empleados`.`id_emp`,
+    `empleados`.`nombre`,
+    `empleados`.`sex_emp`,
+    `empleados`.`fec_nac`,
+    `empleados`.`fec_incorporacion`,
+    `empleados`.`sal_emp`,
+    `empleados`.`comision_emp`,
+    `empleados`.`cargo_emp`,
+    `empleados`.`id_depto`
+FROM `personal`.`empleados`
+WHERE `sal_emp` IN (
+    (SELECT MAX(`sal_emp`) FROM `personal`.`empleados`),
+    (SELECT MIN(`sal_emp`) FROM `personal`.`empleados`),
+    (SELECT (MAX(`sal_emp`) - MIN(`sal_emp`)) FROM `personal`.`empleados`)
+);
+
+
 /* 24. Hallar el salario promedio por departamento. */
 SELECT id_depto, AVG(sal_emp) AS salario_promedio
 FROM personal.empleados
@@ -161,7 +192,7 @@ SELECT `id_depto`, `nombre_depto` FROM `personal`.`departamentos`;
 SELECT `id_emp`, `id_depto`, `nombre` FROM `personal`.`empleados`;
 
 
-SELECT d.nombre_depto
+SELECT d.nombre_depto, e.id_emp
 FROM departamentos d
 LEFT JOIN empleados e ON d.id_depto = e.id_depto
 WHERE e.id_emp IS NULL;
